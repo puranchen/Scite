@@ -1,2 +1,2 @@
 # Scite
-Read, cite and publish scientific research application
+An application for reading, tracking and publishing scientific research
