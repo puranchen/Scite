@@ -1,30 +1,62 @@
 from django.shortcuts import render
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, logout
-from rest_framework import status
-from rest_framework.decorators import api_view
+from django.contrib.contenttypes.models import ContentType
+from django.shortcuts import get_object_or_404
+
+from .serializer import ArticleSerializer, CommentSerializer, VoteSerializer
+from .models import Article, Comment, Vote
+
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework import generics
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view
 
 
-@api_view(['POST'])
-def create_new_user(request):
-    if request.method == 'POST':
-        username = request.data.get('username')
-        password = request.data.get('password')
-        email = request.data.get('email')
+class ArticleListCreateView(ListCreateAPIView):
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
 
-        # Validation
-        if not username or not password or not email:
-            return Response({'status': 'Invalid input'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            user = User.objects.create_user(username=username, password=password, email=email)
-        except ValidationError as e:
-            return Response({'status': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+class ArticleRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
 
-        # Generate token for the new user
-        token, created = Token.objects.get_or_create(user=user)
 
-        return Response({'status': 'User created', 'user_id': user.id}, status=status.HTTP_201_CREATED)
+class CommentListCreateView(ListCreateAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
 
+
+class CommentRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+
+
+class VoteListCreateView(ListCreateAPIView):
+    queryset = Vote.objects.all()
+    serializer_class = VoteSerializer
+
+
+class VoteRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Vote.objects.all()
+    serializer_class = VoteSerializer
+
+
+@api_view(['GET'])
+def article_votes(request, article_id):
+    article = get_object_or_404(Article, pk=article_id)
+    votes = Vote.objects.filter(object_id=article.pk)
+
+    serializer = VoteSerializer(votes, many=True)
+
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def article_comments(request, article_id):
+    article = get_object_or_404(Article, pk=article_id)
+    comments = Comment.objects.filter(object_id=article.pk)
+
+    serializer = CommentSerializer(comments, many=True)
+
+    return Response(serializer.data)
